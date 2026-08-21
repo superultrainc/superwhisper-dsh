@@ -3,6 +3,7 @@ import type {} from '@deepseek-ai/dsh-agent'
 import { createUserMessage } from '@deepseek-ai/dsh-llm'
 import type { ApprovalOutcome } from '@deepseek-ai/dsh-user-approval'
 import type {} from '@deepseek-ai/dsh-user-approval'
+import Schema from '@deepseek-ai/schemastery'
 import { approvalDetails, lastAssistantText, sessionMetadata } from './session.js'
 import { SuperwhisperTransport } from './transport.js'
 
@@ -12,6 +13,11 @@ export interface Config {
   readonly scheme?: string
   readonly timeoutMs?: number
 }
+
+export const Config: Schema<Config> = Schema.object({
+  scheme: Schema.string().default('superwhisper'),
+  timeoutMs: Schema.number().min(1_000).default(30 * 60 * 1_000),
+})
 
 export function apply(ctx: Context, config: Config = {}): void {
   const transport = new SuperwhisperTransport({
