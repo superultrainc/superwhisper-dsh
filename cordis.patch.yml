@@ -1,0 +1,3 @@
+- insert:
+    - id: superwhisper
+      name: '@superwhisper/dsh'
