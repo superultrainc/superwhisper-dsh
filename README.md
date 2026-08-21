@@ -9,7 +9,7 @@ The bundle listens directly to DSH's typed Cordis extension points. It surfaces 
 Access to `superultrainc/superwhisper-dsh` is required while the repository is private.
 
 ```sh
-dsh plugin --profile web add github:superultrainc/superwhisper-dsh
+dsh plugin --profile web add --workspace-root github:superultrainc/superwhisper-dsh
 ```
 
 Restart the `web` profile after installation. Install the bundle separately for any other profile that should use Superwhisper.
@@ -17,7 +17,7 @@ Restart the `web` profile after installation. Install the bundle separately for 
 Remove it with:
 
 ```sh
-dsh plugin --profile web remove @superwhisper/dsh
+dsh plugin --profile web remove --workspace-root @superwhisper/dsh
 ```
 
 ## Native integration points
