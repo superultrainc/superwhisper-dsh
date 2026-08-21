@@ -4,6 +4,11 @@ Private preview of the native Superwhisper integration for DSH.
 
 The bundle listens directly to DSH's typed Cordis extension points. It surfaces completed turns and approval requests in Superwhisper, and sends a Superwhisper reply back through `agent.steer()` without using the Claude or Codex hook bridges.
 
+## Requirements
+
+- Node.js 22.15 or newer. Node.js 24 is recommended.
+- DSH 0.1.1-rc.2 or a compatible newer release.
+
 ## Private installation
 
 Access to `superultrainc/superwhisper-dsh` is required while the repository is private.

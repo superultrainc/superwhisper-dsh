@@ -28,6 +28,9 @@
     "url": "git+ssh://git@github.com/superultrainc/superwhisper-dsh.git"
   },
   "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22.15.0"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json"
   },
