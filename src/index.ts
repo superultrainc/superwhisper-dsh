@@ -5,7 +5,11 @@ import type { ApprovalOutcome } from '@deepseek-ai/dsh-user-approval'
 import type {} from '@deepseek-ai/dsh-user-approval'
 import Schema from '@deepseek-ai/schemastery'
 import { approvalDetails, lastAssistantText, sessionMetadata } from './session.js'
-import { SuperwhisperTransport } from './transport.js'
+import {
+  bypassPermissionsEnabled,
+  enableBypassPermissions,
+  SuperwhisperTransport,
+} from './transport.js'
 
 export const name = 'superwhisper-dsh'
 
@@ -59,6 +63,11 @@ export function apply(ctx: Context, config: Config = {}): void {
   if (ctx.get('approval') !== undefined) {
     ctx.on('approval/request', async (request, next): Promise<ApprovalOutcome> => {
       const metadata = sessionMetadata(request.agent)
+
+      if (await bypassPermissionsEnabled(metadata.sessionId)) {
+        return 'allowed-once'
+      }
+
       const summary = request.reason?.trim() || `Allow ${request.toolName}?`
       const message = JSON.stringify({
         toolName: request.toolName,
@@ -66,6 +75,11 @@ export function apply(ctx: Context, config: Config = {}): void {
         details: approvalDetails(request.agent, request.callId === undefined ? undefined : String(request.callId)),
         suggestions: [
           { label: 'Yes', behavior: 'allow', tool: request.toolName },
+          {
+            label: 'Bypass permissions for this session',
+            behavior: 'bypass-perms',
+            tool: request.toolName,
+          },
           { label: 'No', behavior: 'deny', tool: request.toolName },
         ],
       })
@@ -79,7 +93,14 @@ export function apply(ctx: Context, config: Config = {}): void {
           signal: request.signal,
         })
         if (response === undefined || response.trim().length === 0) return next()
-        return response.trim().toLowerCase() === 'allow' ? 'allowed-once' : 'rejected'
+
+        const behavior = response.trim().toLowerCase()
+        if (behavior === 'allow') return 'allowed-once'
+        if (behavior === 'bypass' || behavior === 'bypass-perms') {
+          await enableBypassPermissions(metadata.sessionId)
+          return 'allowed-once'
+        }
+        return 'rejected'
       } catch (error: unknown) {
         ctx.logger.warn(`superwhisper-dsh: approval transport failed: ${String(error)}`)
         return next()

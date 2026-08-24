@@ -43,6 +43,10 @@ function temporaryDirectory(): string {
   return join(tmpdir(), 'superwhisper-agent')
 }
 
+function bypassPermissionsPath(sessionId: string): string {
+  return join(temporaryDirectory(), `${sessionId}-bypass-perms`)
+}
+
 async function writeInbox(payload: InboxPayload): Promise<void> {
   const directory = inboxDirectory()
   await mkdir(directory, { recursive: true })
@@ -68,6 +72,16 @@ async function exists(path: string): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+export async function bypassPermissionsEnabled(sessionId: string): Promise<boolean> {
+  return exists(bypassPermissionsPath(sessionId))
+}
+
+export async function enableBypassPermissions(sessionId: string): Promise<void> {
+  const directory = temporaryDirectory()
+  await mkdir(directory, { recursive: true })
+  await writeFile(bypassPermissionsPath(sessionId), '', { encoding: 'utf8', mode: 0o600 })
 }
 
 function delay(milliseconds: number, signal?: AbortSignal): Promise<void> {

@@ -29,7 +29,7 @@ dsh plugin --profile web remove --workspace-root @superwhisper/dsh
 
 - `agent/turn-stopping`: presents the current assistant response and steers a spoken reply into the next step.
 - `agent/pre-step`: dismisses stale Superwhisper UI as new work begins.
-- `approval/request`: answers one-shot tool approvals, falling through to the next DSH answerer when Superwhisper is dismissed or unavailable.
+- `approval/request`: answers one-shot tool approvals, supports session-wide permission bypass, and falls through to the next DSH answerer when Superwhisper is dismissed or unavailable.
 
 DSH currently allows only one `userQuestions` provider. The Web host owns it, so `ask_user_question` remains in the DSH Web UI until the upstream seam becomes composable.
 
