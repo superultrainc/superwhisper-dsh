@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto'
+import { createHash, randomUUID } from 'node:crypto'
 import { constants } from 'node:fs'
 import { access, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { homedir, tmpdir } from 'node:os'
@@ -43,13 +43,17 @@ function temporaryDirectory(): string {
   return join(tmpdir(), 'superwhisper-agent')
 }
 
+function safeIdentifier(value: string): string {
+  return createHash('sha256').update(value).digest('hex')
+}
+
 function bypassPermissionsPath(sessionId: string): string {
-  return join(temporaryDirectory(), `${sessionId}-bypass-perms`)
+  return join(temporaryDirectory(), `bypass-${safeIdentifier(sessionId)}`)
 }
 
 async function writeInbox(payload: InboxPayload): Promise<void> {
   const directory = inboxDirectory()
-  await mkdir(directory, { recursive: true })
+  await mkdir(directory, { recursive: true, mode: 0o700 })
   const id = randomUUID()
   const temporary = join(directory, `${id}.json.tmp`)
   const destination = join(directory, `${id}.json`)
@@ -80,7 +84,7 @@ export async function bypassPermissionsEnabled(sessionId: string): Promise<boole
 
 export async function enableBypassPermissions(sessionId: string): Promise<void> {
   const directory = temporaryDirectory()
-  await mkdir(directory, { recursive: true })
+  await mkdir(directory, { recursive: true, mode: 0o700 })
   await writeFile(bypassPermissionsPath(sessionId), '', { encoding: 'utf8', mode: 0o600 })
 }
 
@@ -112,48 +116,47 @@ export class SuperwhisperTransport {
 
   async request(input: RequestInput): Promise<string | undefined> {
     const directory = temporaryDirectory()
-    await mkdir(directory, { recursive: true })
+    await mkdir(directory, { recursive: true, mode: 0o700 })
     const key = input.key ?? randomUUID()
-    const requestId = `${input.sessionId}-${key}`
+    const requestId = safeIdentifier(`${input.sessionId}\0${key}`)
     const base = join(directory, requestId)
     const messageFile = `${base}-message.txt`
     const responseFile = `${base}-response.txt`
 
-    await writeFile(messageFile, input.message, { encoding: 'utf8', mode: 0o600 })
     await rm(responseFile, { force: true })
-    await writeInbox({
-      kind: 'update',
-      sessionId: input.sessionId,
-      requestId,
-      agent: AGENT,
-      status: input.status,
-      summary: input.summary,
-      messageFile,
-      responseFile,
-      cwd: input.cwd,
-      project: input.project,
-      branch: input.branch,
-    })
-    wake(this.config.scheme)
-
-    const deadline = Date.now() + this.config.timeoutMs
     try {
-      while (Date.now() < deadline) {
-        if (await exists(responseFile)) {
-          const response = await readFile(responseFile, 'utf8')
-          if (input.key === undefined) {
-            await Promise.all([rm(messageFile, { force: true }), rm(responseFile, { force: true })])
-          }
-          return response
-        }
-        await delay(Date.now() + 1_000 < deadline ? 1_000 : Math.max(1, deadline - Date.now()), input.signal)
-      }
-    } catch (error: unknown) {
-      if (input.signal?.aborted !== true) throw error
-    }
+      await writeFile(messageFile, input.message, { encoding: 'utf8', mode: 0o600 })
+      await writeInbox({
+        kind: 'update',
+        sessionId: input.sessionId,
+        requestId,
+        agent: AGENT,
+        status: input.status,
+        summary: input.summary,
+        messageFile,
+        responseFile,
+        cwd: input.cwd,
+        project: input.project,
+        branch: input.branch,
+      })
+      wake(this.config.scheme)
 
-    await this.dismiss(input.sessionId)
-    if (input.key === undefined) await rm(messageFile, { force: true })
-    return undefined
+      const deadline = Date.now() + this.config.timeoutMs
+      try {
+        while (Date.now() < deadline) {
+          if (await exists(responseFile)) {
+            return readFile(responseFile, 'utf8')
+          }
+          await delay(Date.now() + 1_000 < deadline ? 1_000 : Math.max(1, deadline - Date.now()), input.signal)
+        }
+      } catch (error: unknown) {
+        if (input.signal?.aborted !== true) throw error
+      }
+
+      await this.dismiss(input.sessionId)
+      return undefined
+    } finally {
+      await Promise.all([rm(messageFile, { force: true }), rm(responseFile, { force: true })])
+    }
   }
 }

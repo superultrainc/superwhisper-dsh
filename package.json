@@ -1,7 +1,7 @@
 {
   "name": "@superwhisper/dsh",
-  "version": "0.1.0-private.1",
-  "description": "Native Superwhisper integration for DSH",
+  "version": "0.1.0",
+  "description": "Superwhisper voice integration plugin for DeepSeek Harness",
   "private": true,
   "type": "module",
   "main": "lib/index.js",
@@ -25,8 +25,21 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+ssh://git@github.com/superultrainc/superwhisper-dsh.git"
+    "url": "git+https://github.com/superultrainc/superwhisper-dsh.git"
   },
+  "homepage": "https://superwhisper.com",
+  "author": {
+    "name": "Superwhisper",
+    "email": "support@superwhisper.com",
+    "url": "https://superwhisper.com"
+  },
+  "keywords": [
+    "superwhisper",
+    "voice",
+    "deepseek",
+    "dsh",
+    "plugin"
+  ],
   "license": "UNLICENSED",
   "engines": {
     "node": ">=22.15.0"

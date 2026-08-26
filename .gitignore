@@ -1,3 +1,21 @@
 node_modules/
 *.log
 .DS_Store
+
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+.npmrc
+*.key
+*.pem
+*.p12
+*.pfx
+
+# DSH and development state
+.cache/
+.dsh-build/
+.sessions/
+.storages/
+.vscode/
+.idea/
